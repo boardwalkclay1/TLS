@@ -12,7 +12,9 @@ const COL_PROFILES = "profiles";
 const COL_REQUESTS = "requests";
 const COL_PAYMENTS = "payments";
 
-const FUNC_PAYMENT = "createPaymentSession"; // Appwrite Function ID
+const FUNC_CREATE_CONNECT = "createConnectAccount";
+const FUNC_ONBOARD = "createOnboardingLink";
+const FUNC_PAYMENT = "createPaymentSession";
 
 // =========================
 // APPWRITE CLIENT
@@ -91,6 +93,9 @@ function bindUI() {
 
   qs("btn-request-save").addEventListener("click", onRequestSave);
 
+  qs("btn-create-stripe").addEventListener("click", onCreateStripeAccount);
+  qs("btn-onboard").addEventListener("click", onStartOnboarding);
+
   document.querySelectorAll("[data-close-modal]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const key = btn.getAttribute("data-close-modal");
@@ -119,7 +124,6 @@ async function loadSession() {
 async function onAuthSignup() {
   const email = qs("auth-email").value.trim();
   const password = qs("auth-password").value.trim();
-
   if (!email || !password) return alert("Email and password required.");
 
   try {
@@ -136,7 +140,6 @@ async function onAuthSignup() {
 async function onAuthLogin() {
   const email = qs("auth-email").value.trim();
   const password = qs("auth-password").value.trim();
-
   if (!email || !password) return alert("Email and password required.");
 
   try {
@@ -154,7 +157,6 @@ async function onAuthLogin() {
 // =========================
 async function loadProfile() {
   if (!currentUser) return (currentProfile = null);
-
   try {
     const res = await databases.listDocuments(DB_ID, COL_PROFILES, [
       Appwrite.Query.equal("userId", currentUser.$id),
@@ -199,6 +201,7 @@ async function onProfileSave() {
     bio,
     lat: isNaN(lat) ? null : lat,
     lng: isNaN(lng) ? null : lng,
+    stripeAccountId: currentProfile ? currentProfile.stripeAccountId || null : null,
   };
 
   try {
@@ -217,12 +220,76 @@ async function onProfileSave() {
         data
       );
     }
-
     closeModal("profile");
     renderAll();
   } catch (e) {
     console.error(e);
     alert("Failed to save profile.");
+  }
+}
+
+// =========================
+// STRIPE CONNECT (HELPER)
+// =========================
+async function onCreateStripeAccount() {
+  if (!currentUser) return openModal("auth");
+  if (!currentProfile || currentProfile.role !== "helper") {
+    return alert("Only helpers can create Stripe accounts.");
+  }
+  if (currentProfile.stripeAccountId) {
+    return alert("Stripe account already linked.");
+  }
+
+  try {
+    const exec = await functions.createExecution(
+      FUNC_CREATE_CONNECT,
+      JSON.stringify({ userId: currentUser.$id })
+    );
+    const data = JSON.parse(exec.responseBody || "{}");
+
+    if (!data.accountId) {
+      console.error("No accountId in response", data);
+      return alert("Failed to create Stripe account.");
+    }
+
+    // Save Stripe account ID into profile
+    currentProfile.stripeAccountId = data.accountId;
+    await databases.updateDocument(DB_ID, COL_PROFILES, currentProfile.$id, {
+      stripeAccountId: data.accountId,
+    });
+
+    alert("Stripe account created and linked.");
+    renderAll();
+  } catch (e) {
+    console.error(e);
+    alert("Failed to create Stripe account.");
+  }
+}
+
+async function onStartOnboarding() {
+  if (!currentUser) return openModal("auth");
+  if (!currentProfile || currentProfile.role !== "helper") {
+    return alert("Only helpers can onboard with Stripe.");
+  }
+  if (!currentProfile.stripeAccountId) {
+    return alert("No Stripe account found. Create one first.");
+  }
+
+  try {
+    const exec = await functions.createExecution(
+      FUNC_ONBOARD,
+      JSON.stringify({ accountId: currentProfile.stripeAccountId })
+    );
+    const data = JSON.parse(exec.responseBody || "{}");
+
+    if (data.url) {
+      window.location.href = data.url;
+    } else {
+      alert("Onboarding link unavailable.");
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Failed to start onboarding.");
   }
 }
 
@@ -282,10 +349,10 @@ async function startPayment(requestId) {
 
   const amount = req.budget || 20;
 
-  // Helper must have a Stripe Connect account ID stored in profile
-  const helper = await findHelperForRequest(req);
+  // naive: pick first helper with Stripe account
+  const helper = await findHelperWithStripe();
   if (!helper || !helper.stripeAccountId)
-    return alert("Helper has no Stripe Connect account.");
+    return alert("No helper with Stripe account is available yet.");
 
   try {
     const exec = await functions.createExecution(
@@ -296,8 +363,7 @@ async function startPayment(requestId) {
         requestId: req.$id,
       })
     );
-
-    const data = JSON.parse(exec.responseBody);
+    const data = JSON.parse(exec.responseBody || "{}");
     if (data.checkoutUrl) {
       window.location.href = data.checkoutUrl;
     } else {
@@ -309,13 +375,17 @@ async function startPayment(requestId) {
   }
 }
 
-async function findHelperForRequest(req) {
-  // For now, helpers are manually selected or matched later.
-  // You can expand this logic.
-  const res = await databases.listDocuments(DB_ID, COL_PROFILES, [
-    Appwrite.Query.equal("role", "helper"),
-  ]);
-  return res.documents[0] || null;
+async function findHelperWithStripe() {
+  try {
+    const res = await databases.listDocuments(DB_ID, COL_PROFILES, [
+      Appwrite.Query.equal("role", "helper"),
+      Appwrite.Query.notEqual("stripeAccountId", null),
+    ]);
+    return res.documents[0] || null;
+  } catch (e) {
+    console.error("findHelperWithStripe failed", e);
+    return null;
+  }
 }
 
 // =========================
@@ -343,9 +413,11 @@ function renderProfileView() {
       : "ls-tag ls-tag--customer";
 
   const roleLabel =
-    currentProfile.role === "helper"
-      ? "Laundry Helper"
-      : "Needs Laundry Help";
+    currentProfile.role === "helper" ? "Laundry Helper" : "Needs Laundry";
+
+  const stripeStatus = currentProfile.stripeAccountId
+    ? `Stripe linked (${currentProfile.stripeAccountId.slice(0, 8)}...)`
+    : "Stripe not linked";
 
   container.className = "ls-profile-card";
   container.innerHTML = `
@@ -358,6 +430,7 @@ function renderProfileView() {
       </div>
     </div>
     <p>${escapeHtml(currentProfile.bio || "")}</p>
+    <p class="ls-muted">${stripeStatus}</p>
   `;
 }
 
