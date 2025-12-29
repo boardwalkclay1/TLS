@@ -161,6 +161,13 @@ body {
   gap: 4px;
 }
 
+.ls-profile-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
 .ls-tag {
   display: inline-flex;
   align-items: center;
