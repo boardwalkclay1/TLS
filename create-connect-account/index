@@ -1,0 +1,22 @@
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+
+module.exports = async (req, res) => {
+  try {
+    const payload = JSON.parse(req.payload || "{}");
+    const userId = payload.userId;
+
+    if (!userId) {
+      return res.json({ error: "missing_userId" }, 400);
+    }
+
+    const account = await stripe.accounts.create({
+      type: "express",
+      metadata: { appwriteUserId: userId },
+    });
+
+    res.json({ accountId: account.id });
+  } catch (err) {
+    console.error(err);
+    res.json({ error: "account_creation_failed" }, 500);
+  }
+};
