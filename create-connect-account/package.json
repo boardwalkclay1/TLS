@@ -1,0 +1,9 @@
+{
+  "name": "tls-create-connect-account",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "dependencies": {
+    "stripe": "^12.0.0"
+  }
+}
