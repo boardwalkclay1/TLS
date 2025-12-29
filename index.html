@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>The Laundry Spot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./styles.css">
+  <!-- Appwrite SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
+</head>
+<body>
+  <header class="ls-header">
+    <h1>The Laundry Spot</h1>
+    <div class="ls-header-actions">
+      <button id="btn-login" class="ls-btn">Log in</button>
+      <button id="btn-signup" class="ls-btn ls-btn-primary">Sign up</button>
+    </div>
+  </header>
+
+  <main class="ls-main">
+    <section class="ls-panel">
+      <h2>Your Profile</h2>
+      <div id="profile-view" class="ls-profile-empty">
+        <p>Not logged in.</p>
+      </div>
+      <button id="btn-edit-profile" class="ls-btn ls-btn-small ls-btn-primary">Edit Profile</button>
+    </section>
+
+    <section class="ls-panel">
+      <div class="ls-panel-header">
+        <h2>Laundry Requests</h2>
+        <button id="btn-new-request" class="ls-btn ls-btn-small ls-btn-primary">
+          New Request
+        </button>
+      </div>
+      <div id="feed-list" class="ls-feed-list"></div>
+    </section>
+
+    <section class="ls-panel">
+      <h2>Map</h2>
+      <p class="ls-muted">Prototype: shows your location + others from Appwrite.</p>
+      <div id="map" class="ls-map-placeholder">
+        <p>Map placeholder – hook up real map later.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Profile Modal -->
+  <div id="modal-profile" class="ls-modal ls-hidden">
+    <div class="ls-modal-content">
+      <h3>Profile</h3>
+      <label>
+        Display Name
+        <input id="profile-name" type="text">
+      </label>
+      <label>
+        Role
+        <select id="profile-role">
+          <option value="customer">Customer (needs laundry)</option>
+          <option value="helper">Helper (does laundry)</option>
+        </select>
+      </label>
+      <label>
+        Bio
+        <textarea id="profile-bio" rows="3"></textarea>
+      </label>
+      <label>
+        Location (lat, lng)
+        <input id="profile-lat" type="number" step="0.000001" placeholder="33.7490">
+        <input id="profile-lng" type="number" step="0.000001" placeholder="-84.3880">
+      </label>
+      <div class="ls-modal-actions">
+        <button id="btn-profile-save" class="ls-btn ls-btn-primary">Save</button>
+        <button data-close-modal="profile" class="ls-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Request Modal -->
+  <div id="modal-request" class="ls-modal ls-hidden">
+    <div class="ls-modal-content">
+      <h3>New Laundry Request</h3>
+      <label>
+        Title
+        <input id="request-title" type="text" placeholder="e.g. Weekly wash & fold">
+      </label>
+      <label>
+        Description
+        <textarea id="request-description" rows="3"></textarea>
+      </label>
+      <label>
+        Budget
+        <input id="request-budget" type="number" step="1" min="0">
+      </label>
+      <div class="ls-modal-actions">
+        <button id="btn-request-save" class="ls-btn ls-btn-primary">Post</button>
+        <button data-close-modal="request" class="ls-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Simple auth prompt (email only, for dev) -->
+  <div id="modal-auth" class="ls-modal ls-hidden">
+    <div class="ls-modal-content">
+      <h3>Log in / Sign up</h3>
+      <label>
+        Email
+        <input id="auth-email" type="email">
+      </label>
+      <label>
+        Password
+        <input id="auth-password" type="password">
+      </label>
+      <div class="ls-modal-actions">
+        <button id="btn-auth-login" class="ls-btn">Log in</button>
+        <button id="btn-auth-signup" class="ls-btn ls-btn-primary">Sign up</button>
+        <button data-close-modal="auth" class="ls-btn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="./app.js"></script>
+</body>
+</html>
