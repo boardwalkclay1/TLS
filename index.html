@@ -5,6 +5,7 @@
   <title>TLS — The Laundry Spot</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="./styles.css">
+  <!-- Appwrite SDK -->
   <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
 </head>
 <body>
@@ -17,15 +18,26 @@
   </header>
 
   <main class="ls-main">
+    <!-- Profile / Helper Stripe controls -->
     <section class="ls-panel">
       <h2>Your Profile</h2>
       <div id="profile-view" class="ls-profile-empty">
         <p>Not logged in.</p>
       </div>
-      <button id="btn-edit-profile" class="ls-btn ls-btn-small ls-btn-primary">Edit Profile</button>
-      <button id="btn-onboard" class="ls-btn ls-btn-small">Stripe Onboarding</button>
+      <div class="ls-profile-actions">
+        <button id="btn-edit-profile" class="ls-btn ls-btn-small ls-btn-primary">
+          Edit Profile
+        </button>
+        <button id="btn-create-stripe" class="ls-btn ls-btn-small">
+          Create Stripe Account
+        </button>
+        <button id="btn-onboard" class="ls-btn ls-btn-small">
+          Stripe Onboarding
+        </button>
+      </div>
     </section>
 
+    <!-- Requests feed -->
     <section class="ls-panel">
       <div class="ls-panel-header">
         <h2>Laundry Requests</h2>
@@ -36,9 +48,10 @@
       <div id="feed-list" class="ls-feed-list"></div>
     </section>
 
+    <!-- Map placeholder -->
     <section class="ls-panel">
       <h2>Map</h2>
-      <p class="ls-muted">Prototype map placeholder.</p>
+      <p class="ls-muted">Prototype map placeholder. We’ll wire a real map later.</p>
       <div id="map" class="ls-map-placeholder">
         <p>Map will go here.</p>
       </div>
@@ -49,8 +62,12 @@
   <div id="modal-auth" class="ls-modal ls-hidden">
     <div class="ls-modal-content">
       <h3>Log in / Sign up</h3>
-      <label>Email <input id="auth-email" type="email"></label>
-      <label>Password <input id="auth-password" type="password"></label>
+      <label>Email
+        <input id="auth-email" type="email">
+      </label>
+      <label>Password
+        <input id="auth-password" type="password">
+      </label>
       <div class="ls-modal-actions">
         <button id="btn-auth-login" class="ls-btn">Log in</button>
         <button id="btn-auth-signup" class="ls-btn ls-btn-primary">Sign up</button>
@@ -63,16 +80,24 @@
   <div id="modal-profile" class="ls-modal ls-hidden">
     <div class="ls-modal-content">
       <h3>Edit Profile</h3>
-      <label>Display Name <input id="profile-name" type="text"></label>
+      <label>Display Name
+        <input id="profile-name" type="text">
+      </label>
       <label>Role
         <select id="profile-role">
-          <option value="customer">Customer</option>
-          <option value="helper">Helper</option>
+          <option value="customer">Customer (needs laundry)</option>
+          <option value="helper">Helper (does laundry)</option>
         </select>
       </label>
-      <label>Bio <textarea id="profile-bio" rows="3"></textarea></label>
-      <label>Latitude <input id="profile-lat" type="number" step="0.000001"></label>
-      <label>Longitude <input id="profile-lng" type="number" step="0.000001"></label>
+      <label>Bio
+        <textarea id="profile-bio" rows="3"></textarea>
+      </label>
+      <label>Latitude
+        <input id="profile-lat" type="number" step="0.000001">
+      </label>
+      <label>Longitude
+        <input id="profile-lng" type="number" step="0.000001">
+      </label>
       <div class="ls-modal-actions">
         <button id="btn-profile-save" class="ls-btn ls-btn-primary">Save</button>
         <button data-close-modal="profile" class="ls-btn">Cancel</button>
@@ -84,9 +109,15 @@
   <div id="modal-request" class="ls-modal ls-hidden">
     <div class="ls-modal-content">
       <h3>New Laundry Request</h3>
-      <label>Title <input id="request-title" type="text"></label>
-      <label>Description <textarea id="request-description" rows="3"></textarea></label>
-      <label>Budget <input id="request-budget" type="number"></label>
+      <label>Title
+        <input id="request-title" type="text">
+      </label>
+      <label>Description
+        <textarea id="request-description" rows="3"></textarea>
+      </label>
+      <label>Budget
+        <input id="request-budget" type="number" step="1" min="0">
+      </label>
       <div class="ls-modal-actions">
         <button id="btn-request-save" class="ls-btn ls-btn-primary">Post</button>
         <button data-close-modal="request" class="ls-btn">Cancel</button>
